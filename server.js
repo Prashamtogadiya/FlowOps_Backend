@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const dotenv = require('dotenv')
 const serviceRequestStatusRoutes = require('./routes/serviceRequestStatusRoute');
+const errorHandler = require('./middleware/errorHandler');
 
 dotenv.config(); // load .env
 console.log('Database Config:', {
@@ -18,11 +19,8 @@ app.use(express.urlencoded({ extended: true })); // form body parser
 // mount routes
 app.use('/api/service-request-status', serviceRequestStatusRoutes);
 
-// global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
-});
+// global error handler (centralized)
+app.use(errorHandler);
 
 // start server
 app.listen(process.env.PORT, () => {

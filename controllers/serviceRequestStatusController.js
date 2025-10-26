@@ -1,12 +1,11 @@
 const db = require("../config/database"); // MySQL pool
-const queries = require("../models/ServiceRequestStatusModel"); // SQL queries
-const Joi = require("joi");
+const ServiceRequestStatusModel = require("../models/ServiceRequestStatusModel");
 const serviceRequestStatusSchema = require("../validations/serviceRequestStatusValidation");
 
 // list all statuses
 const getAllStatuses = async (req, res) => {
   try {
-    const [statuses] = await db.query(queries.getAllStatuses); // SELECT
+    const [statuses] = await ServiceRequestStatusModel.getAllStatuses();
     res.json(statuses);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -16,10 +15,9 @@ const getAllStatuses = async (req, res) => {
 // get status by id
 const getStatusById = async (req, res) => {
   try {
-    const [status] = await db.query(queries.getStatusById, [req.params.id]); // SELECT by id
-
-    if (status && status.length > 0) {
-      res.json(status[0]);
+    const [rows] = await ServiceRequestStatusModel.getStatusById(req.params.id);
+    if (rows && rows.length > 0) {
+      res.json(rows[0]);
     } else {
       res.status(404).json({ message: "Status not found" });
     }
@@ -31,7 +29,7 @@ const getStatusById = async (req, res) => {
 // create status
 const createStatus = async (req, res) => {
   try {
-    // validate input
+    // validate input (route also validates, this is defensive)
     const { error, value } = serviceRequestStatusSchema.validate(req.body, {
       abortEarly: false,
     });
@@ -42,7 +40,6 @@ const createStatus = async (req, res) => {
       });
     }
 
-    // convert booleans to 1/0
     const boolToInt = (val) => (val ? 1 : 0);
 
     const {
@@ -57,8 +54,7 @@ const createStatus = async (req, res) => {
       IsAllowedForTechnician,
     } = value;
 
-    // insert record (parameterized)
-    const [result] = await db.query(queries.createStatus, [
+    const [result] = await ServiceRequestStatusModel.createStatus(
       ServiceRequestStatusName,
       ServiceRequestStatusSystemName,
       Sequence,
@@ -67,10 +63,9 @@ const createStatus = async (req, res) => {
       ServiceRequestStatusCssClass,
       boolToInt(IsOpen),
       boolToInt(IsNoFurtherActionRequired),
-      boolToInt(IsAllowedForTechnician),
-    ]);
+      boolToInt(IsAllowedForTechnician)
+    );
 
-    // return created id
     res.status(201).json({ id: result.insertId, ...value });
   } catch (error) {
     console.error("DB Error:", error);
@@ -81,7 +76,6 @@ const createStatus = async (req, res) => {
 // update status
 const updateStatus = async (req, res) => {
   try {
-    // validate input
     const { error, value } = serviceRequestStatusSchema.validate(req.body, {
       abortEarly: false,
     });
@@ -104,19 +98,18 @@ const updateStatus = async (req, res) => {
       IsAllowedForTechnician,
     } = value;
 
-    // update record (parameterized)
-    const [result] = await db.query(queries.updateStatus, [
+    const [result] = await ServiceRequestStatusModel.updateStatus(
       ServiceRequestStatusName,
       ServiceRequestStatusSystemName,
       Sequence,
       Description,
       UserID,
       ServiceRequestStatusCssClass,
-      IsOpen,
-      IsNoFurtherActionRequired,
-      IsAllowedForTechnician,
-      req.params.id,
-    ]);
+      IsOpen ? 1 : 0,
+      IsNoFurtherActionRequired ? 1 : 0,
+      IsAllowedForTechnician ? 1 : 0,
+      req.params.id
+    );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Status not found" });
@@ -131,7 +124,7 @@ const updateStatus = async (req, res) => {
 // delete status
 const deleteStatus = async (req, res) => {
   try {
-    const [result] = await db.query(queries.deleteStatus, [req.params.id]); // DELETE
+    const [result] = await ServiceRequestStatusModel.deleteStatus(req.params.id);
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Status not found" });
     }
