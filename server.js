@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const dotenv = require('dotenv')
 const serviceRequestStatusRoutes = require('./routes/serviceRequestStatusRoute');
+const serviceDeptRoutes = require('./routes/serviceDeptRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 dotenv.config(); // load .env
@@ -18,6 +19,7 @@ app.use(express.urlencoded({ extended: true })); // form body parser
 
 // mount routes
 app.use('/api/service-request-status', serviceRequestStatusRoutes);
+app.use('/api/service-departments', serviceDeptRoutes);
 
 // global error handler (centralized)
 app.use(errorHandler);
