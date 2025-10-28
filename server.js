@@ -24,7 +24,8 @@ app.use('/api/service-departments', serviceDeptRoutes);
 // global error handler (centralized)
 app.use(errorHandler);
 
-// start server
+// start server on port 3000
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
 })
+
